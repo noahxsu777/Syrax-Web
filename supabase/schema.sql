@@ -51,10 +51,52 @@ create table if not exists public.verification_requests (
 create index if not exists verification_requests_status_submitted_idx
   on public.verification_requests (status, submitted_at);
 
+do $$ begin
+  create type public.live_room_status as enum ('scheduled', 'live', 'ended', 'cancelled');
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.live_rooms (
+  id bigint generated always as identity primary key,
+  host_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  status public.live_room_status not null default 'scheduled',
+  viewer_count integer not null default 0 check (viewer_count >= 0),
+  scheduled_at timestamptz,
+  started_at timestamptz,
+  ended_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists live_rooms_status_created_idx
+  on public.live_rooms (status, created_at desc);
+
+do $$ begin
+  create type public.content_status as enum ('published', 'hidden', 'removed');
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.content_items (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  type text not null,
+  title text,
+  media_url text,
+  thumbnail_url text,
+  status public.content_status not null default 'published',
+  created_at timestamptz not null default now(),
+  reviewed_at timestamptz
+);
+
+create index if not exists content_items_created_idx
+  on public.content_items (created_at desc);
+
 alter table public.admin_profiles enable row level security;
 alter table public.feature_flags enable row level security;
 alter table public.audit_logs enable row level security;
 alter table public.verification_requests enable row level security;
+alter table public.live_rooms enable row level security;
+alter table public.content_items enable row level security;
 
 -- No crear políticas para clientes móviles sobre estas tablas. El dashboard accede
 -- mediante rutas server-side después de validar sesión, rol y MFA.
