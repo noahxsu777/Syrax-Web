@@ -12,6 +12,9 @@ export async function POST(request: Request) {
   if (error || !data.user) return NextResponse.json({ error: "Correo o contraseña incorrectos." }, { status: 401 });
   const admin = createAdminClient();
   const { data: profile } = await admin.from("admin_profiles").select("role").eq("user_id", data.user.id).single();
-  if (!profile || !["admin", "superadmin"].includes(profile.role)) { await client.auth.signOut(); return NextResponse.json({ error: "Esta cuenta no tiene acceso administrativo." }, { status: 403 }); }
-  return NextResponse.json({ authenticated: true, email: data.user.email, role: profile.role });
+  const configuredOwner = process.env.ADMIN_SUPERADMIN_EMAIL?.trim().toLowerCase();
+  const isConfiguredOwner = Boolean(configuredOwner && data.user.email?.toLowerCase() === configuredOwner);
+  if (!isConfiguredOwner && (!profile || !["admin", "superadmin"].includes(profile.role))) { await client.auth.signOut(); return NextResponse.json({ error: "Esta cuenta no tiene acceso administrativo." }, { status: 403 }); }
+  if (isConfiguredOwner && profile?.role !== "superadmin") await admin.from("admin_profiles").upsert({ user_id: data.user.id, role: "superadmin", mfa_required: true });
+  return NextResponse.json({ authenticated: true, email: data.user.email, role: isConfiguredOwner ? "superadmin" : profile?.role });
 }
