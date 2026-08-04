@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const query = new URL(request.url).searchParams.get("q")?.trim().toLowerCase() ?? "";
-  if (query.length < 2) return NextResponse.json({ error: "Escribe al menos 2 caracteres." }, { status: 400 });
+  if (query.length === 1) return NextResponse.json({ error: "Escribe al menos 2 caracteres." }, { status: 400 });
 
   try {
     const supabase = createAdminClient();
@@ -17,6 +17,7 @@ export async function GET(request: Request) {
       const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
       if (error) throw error;
       matches.push(...data.users.filter((user) => {
+        if (!query) return true;
         const name = String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? "");
         return [user.id, user.email, user.phone, name].some((value) => value?.toLowerCase().includes(query));
       }));
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
       page += 1;
     }
 
-    return NextResponse.json({ users: matches.slice(0, 20).map(publicUser) }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ users: matches.slice(0, query ? 20 : 50).map(publicUser) }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Unable to search Supabase users", error);
     return NextResponse.json({ error: "No fue posible buscar usuarios." }, { status: 500 });
