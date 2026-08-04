@@ -97,13 +97,13 @@ export default function Home() {
           <div className="header-actions">
             <button className="icon-button" aria-label="Notificaciones"><Bell size={19}/><span className="notification-dot"/></button>
             <span className="divider"/>
-            <button className="profile"><span>CS</span><div><strong>Camila S.</strong><small>Superadmin</small></div><ChevronDown size={16}/></button>
+            <button className="profile"><span>ZA</span><div><strong>Zyrax Admin</strong><small>Superadmin</small></div><ChevronDown size={16}/></button>
           </div>
         </header>
 
         <section className="content">
           {loadError && <div className="data-error" role="alert">{loadError}</div>}
-          <div className="welcome"><div><p>LUNES, 3 DE AGOSTO</p><h1>Buen día, Camila <span>✦</span></h1><h2>Esto es lo que está pasando en Vibra.</h2></div><button className="primary"><Settings size={17}/> Configuración</button></div>
+          <div className="welcome"><div><p>LUNES, 3 DE AGOSTO</p><h1>Buen día, Zyrax Admin <span>✦</span></h1><h2>Esto es lo que está pasando en Vibra.</h2></div><button className="primary"><Settings size={17}/> Configuración</button></div>
 
           <div className="stats-grid">
             <Stat label="Usuarios totales" value={formatNumber(dashboard?.stats.totalUsers)} delta="Supabase Auth" note="total registrado" icon={UsersRound} tone="violet" />
