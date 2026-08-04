@@ -13,6 +13,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Sparkles,
   SlidersHorizontal,
   UsersRound,
   Wrench,
@@ -20,12 +21,14 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AdminTools, type AdminTool } from "./admin-tools";
+import { AdminSection } from "./admin-sections";
 
 const nav = [
   { label: "Resumen", icon: LayoutDashboard },
   { label: "Usuarios", icon: UsersRound, badge: "12" },
   { label: "Verificaciones", icon: ShieldCheck, badge: "5" },
   { label: "Lives y salas", icon: Radio },
+  { label: "Contenido nuevo", icon: Sparkles, badge: "Nuevo" },
   { label: "Funciones", icon: SlidersHorizontal },
   { label: "Servicios", icon: Cloud },
   { label: "Notificaciones", icon: Bell },
@@ -79,9 +82,9 @@ export default function Home() {
         <button className="mobile-close" onClick={() => setSidebarOpen(false)} aria-label="Cerrar menú"><X size={20}/></button>
         <nav>
           <p className="nav-label">PLATAFORMA</p>
-          {nav.slice(0, 4).map((item) => <NavItem key={item.label} {...item} active={active === item.label} onClick={() => { setActive(item.label); setSidebarOpen(false); }}/>) }
+          {nav.slice(0, 5).map((item) => <NavItem key={item.label} {...item} active={active === item.label} onClick={() => { setActive(item.label); setSidebarOpen(false); }}/>) }
           <p className="nav-label second">SISTEMA</p>
-          {nav.slice(4).map((item) => <NavItem key={item.label} {...item} active={active === item.label} onClick={() => { setActive(item.label); setSidebarOpen(false); }}/>) }
+          {nav.slice(5).map((item) => <NavItem key={item.label} {...item} active={active === item.label} onClick={() => { setActive(item.label); setSidebarOpen(false); }}/>) }
         </nav>
         <div className="sidebar-footer">
           <div className="status-line"><span className="pulse"/>Todos los sistemas operativos</div>
@@ -103,6 +106,7 @@ export default function Home() {
 
         <section className="content">
           {loadError && <div className="data-error" role="alert">{loadError}</div>}
+          {active === "Resumen" ? <>
           <div className="welcome"><div><p>LUNES, 3 DE AGOSTO</p><h1>Buen día, Zyrax Admin <span>✦</span></h1><h2>Esto es lo que está pasando en Vibra.</h2></div><button className="primary"><Settings size={17}/> Configuración</button></div>
 
           <div className="stats-grid">
@@ -154,6 +158,7 @@ export default function Home() {
               <div className="secure-note"><ShieldCheck size={17}/><span>Las credenciales se almacenan cifradas y nunca se muestran completas.</span></div>
             </section>
           </div>
+          </> : <AdminSection section={active}/>} 
         </section>
       </main>
       <AdminTools tool={adminTool} query={userQuery} onClose={() => setAdminTool(null)} />
