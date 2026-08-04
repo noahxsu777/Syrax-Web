@@ -5,12 +5,10 @@ import {
   Bell,
   ChevronDown,
   CircleCheck,
-  CircleUserRound,
   Cloud,
   KeyRound,
   LayoutDashboard,
   Menu,
-  MessageCircleMore,
   Radio,
   Search,
   Settings,
@@ -20,7 +18,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const nav = [
   { label: "Resumen", icon: LayoutDashboard },
@@ -34,17 +32,42 @@ const nav = [
   { label: "Auditoría", icon: Activity },
 ];
 
-const activities = [
-  { icon: CircleUserRound, tone: "violet", title: "Usuario verificado", detail: "@mafe_music fue aprobada por Camila", time: "Hace 4 min" },
-  { icon: Radio, tone: "pink", title: "Live finalizado", detail: "Sala “Noches de Vibra” · 1.248 asistentes", time: "Hace 18 min" },
-  { icon: KeyRound, tone: "amber", title: "Credencial actualizada", detail: "ZEGOCLOUD App Sign rotado por Santiago", time: "Hace 42 min" },
-  { icon: MessageCircleMore, tone: "blue", title: "Notificación enviada", detail: "Mantenimiento programado · 18.420 destinatarios", time: "Hace 1 h" },
-];
+type DashboardData = {
+  stats: { totalUsers: number; activeUsers: number; adminCount: number; enabledFeatures: number };
+  signups: { date: string; value: number }[];
+  activities: { id: number; action: string; resource_type: string; resource_id: string | null; created_at: string }[];
+  generatedAt: string;
+};
 
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [active, setActive] = useState("Resumen");
   const [maintenance, setMaintenance] = useState(false);
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/admin/dashboard", { cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error ?? "No fue posible cargar Supabase.");
+        return body as DashboardData;
+      })
+      .then(setDashboard)
+      .catch((error: Error) => {
+        if (error.name !== "AbortError") setLoadError(error.message);
+      });
+    return () => controller.abort();
+  }, []);
+
+  const chartPoints = useMemo(() => {
+    const values = dashboard?.signups.map((item) => item.value) ?? [];
+    const max = Math.max(...values, 1);
+    return values.map((value, index) => ({ x: index * (700 / 6), y: 210 - (value / max) * 170 }));
+  }, [dashboard]);
+
+  const chartLine = chartPoints.map((point, index) => `${index ? "L" : "M"}${point.x} ${point.y}`).join(" ");
 
   return (
     <div className="app-shell">
@@ -76,27 +99,28 @@ export default function Home() {
         </header>
 
         <section className="content">
+          {loadError && <div className="data-error" role="alert">{loadError}</div>}
           <div className="welcome"><div><p>LUNES, 3 DE AGOSTO</p><h1>Buen día, Camila <span>✦</span></h1><h2>Esto es lo que está pasando en Vibra.</h2></div><button className="primary"><Settings size={17}/> Configuración</button></div>
 
           <div className="stats-grid">
-            <Stat label="Usuarios totales" value="24.892" delta="+8,4%" note="vs. mes anterior" icon={UsersRound} tone="violet" />
-            <Stat label="Usuarios activos" value="7.306" delta="+12,1%" note="últimos 30 días" icon={Activity} tone="blue" />
-            <Stat label="Lives ahora" value="38" delta="En vivo" note="2.841 espectadores" icon={Radio} tone="pink" live />
-            <Stat label="Por verificar" value="12" delta="5 nuevas" note="desde ayer" icon={ShieldCheck} tone="amber" />
+            <Stat label="Usuarios totales" value={formatNumber(dashboard?.stats.totalUsers)} delta="Supabase Auth" note="total registrado" icon={UsersRound} tone="violet" />
+            <Stat label="Usuarios activos" value={formatNumber(dashboard?.stats.activeUsers)} delta="Últimos 30 días" note="con inicio de sesión" icon={Activity} tone="blue" />
+            <Stat label="Administradores" value={formatNumber(dashboard?.stats.adminCount)} delta="Acceso interno" note="perfiles admin" icon={ShieldCheck} tone="pink" />
+            <Stat label="Funciones activas" value={formatNumber(dashboard?.stats.enabledFeatures)} delta="Feature flags" note="habilitadas ahora" icon={SlidersHorizontal} tone="amber" />
           </div>
 
           <div className="dashboard-grid">
             <section className="panel overview-panel">
-              <div className="panel-title"><div><h3>Actividad de usuarios</h3><p>Usuarios activos durante los últimos 7 días</p></div><button className="select-button">Últimos 7 días <ChevronDown size={15}/></button></div>
+              <div className="panel-title"><div><h3>Nuevos usuarios</h3><p>Registros de Supabase Auth durante los últimos 7 días</p></div><button className="select-button">Últimos 7 días <ChevronDown size={15}/></button></div>
               <div className="chart-wrap">
                 <div className="y-axis"><span>8k</span><span>6k</span><span>4k</span><span>2k</span><span>0</span></div>
                 <div className="chart">
                   <svg viewBox="0 0 700 220" role="img" aria-label="Actividad semanal de usuarios">
                     <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7357e8" stopOpacity=".28"/><stop offset="100%" stopColor="#7357e8" stopOpacity="0"/></linearGradient></defs>
                     <path className="grid-lines" d="M0 20H700M0 70H700M0 120H700M0 170H700M0 220H700"/>
-                    <path className="area" d="M0 170 C45 155 70 163 110 135 S180 105 225 118 S295 85 340 96 S410 70 455 74 S525 54 570 66 S640 25 700 38 L700 220 L0 220Z"/>
-                    <path className="line" d="M0 170 C45 155 70 163 110 135 S180 105 225 118 S295 85 340 96 S410 70 455 74 S525 54 570 66 S640 25 700 38"/>
-                    {[['0','170'],['110','135'],['225','118'],['340','96'],['455','74'],['570','66'],['700','38']].map(([cx,cy]) => <circle key={cx} cx={cx} cy={cy} r="5"/>)}
+                    {chartLine && <path className="area" d={`${chartLine} L700 220 L0 220Z`}/>} 
+                    {chartLine && <path className="line" d={chartLine}/>} 
+                    {chartPoints.map(({ x, y }) => <circle key={x} cx={x} cy={y} r="5"/>)}
                   </svg>
                   <div className="x-axis"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
                 </div>
@@ -116,12 +140,12 @@ export default function Home() {
 
             <section className="panel activity-panel">
               <div className="panel-title"><div><h3>Actividad reciente</h3><p>Últimos cambios en la plataforma</p></div><button className="text-button">Ver auditoría →</button></div>
-              <div className="activity-list">{activities.map((item) => <div className="activity-item" key={item.title}><span className={`activity-icon ${item.tone}`}><item.icon size={17}/></span><div><strong>{item.title}</strong><p>{item.detail}</p></div><time>{item.time}</time></div>)}</div>
+              <div className="activity-list">{dashboard?.activities.length ? dashboard.activities.map((item, index) => <div className="activity-item" key={item.id}><span className={`activity-icon ${["violet", "pink", "amber", "blue"][index % 4]}`}><Activity size={17}/></span><div><strong>{humanize(item.action)}</strong><p>{humanize(item.resource_type)}{item.resource_id ? ` · ${item.resource_id}` : ""}</p></div><time>{relativeTime(item.created_at)}</time></div>) : <p className="empty-state">{dashboard ? "Aún no hay registros de auditoría." : "Cargando actividad…"}</p>}</div>
             </section>
 
             <section className="panel services-panel">
               <div className="panel-title"><div><h3>Estado de servicios</h3><p>Conexiones e integraciones</p></div><button className="icon-button"><Settings size={17}/></button></div>
-              <Service name="Supabase" detail="Base de datos" color="#3ecf8e" />
+              <Service name="Supabase" detail={dashboard ? `Sincronizado ${relativeTime(dashboard.generatedAt)}` : "Conectando…"} color="#3ecf8e" connected={Boolean(dashboard)} />
               <Service name="ZEGOCLOUD" detail="Streaming y salas" color="#5568ff" />
               <Service name="GIPHY" detail="Contenido multimedia" color="#ff4f92" />
               <div className="secure-note"><ShieldCheck size={17}/><span>Las credenciales se almacenan cifradas y nunca se muestran completas.</span></div>
@@ -140,4 +164,20 @@ function Stat({ label, value, delta, note, icon: Icon, tone, live }: { label:str
   return <article className="stat-card"><div className="stat-top"><span className={`stat-icon ${tone}`}><Icon size={22}/></span><span className="dots">•••</span></div><p>{label}</p><strong className="stat-value">{value}</strong><div className="stat-note"><span className={live ? "live-pill" : "positive"}>{live && <i/>}{delta}</span> {note}</div></article>;
 }
 function Quick({ icon: Icon, label, tone }: {icon:typeof UsersRound; label:string; tone:string}) { return <button className="quick-action"><span className={`quick-icon ${tone}`}><Icon size={19}/></span><span>{label}</span><b>›</b></button> }
-function Service({name, detail, color}:{name:string;detail:string;color:string}) { return <div className="service"><span className="service-logo" style={{background: color}}>{name[0]}</span><div><strong>{name}</strong><small>{detail}</small></div><span className="connected"><CircleCheck size={14}/> Conectado</span></div> }
+function Service({name, detail, color, connected = true}:{name:string;detail:string;color:string;connected?:boolean}) { return <div className="service"><span className="service-logo" style={{background: color}}>{name[0]}</span><div><strong>{name}</strong><small>{detail}</small></div><span className={connected ? "connected" : "disconnected"}><CircleCheck size={14}/> {connected ? "Conectado" : "Pendiente"}</span></div> }
+
+function formatNumber(value?: number) {
+  return value === undefined ? "—" : new Intl.NumberFormat("es-CO").format(value);
+}
+
+function humanize(value: string) {
+  return value.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function relativeTime(value: string) {
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
+  if (seconds < 60) return "Ahora";
+  if (seconds < 3600) return `Hace ${Math.floor(seconds / 60)} min`;
+  if (seconds < 86400) return `Hace ${Math.floor(seconds / 3600)} h`;
+  return `Hace ${Math.floor(seconds / 86400)} d`;
+}
