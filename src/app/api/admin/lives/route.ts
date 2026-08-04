@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminAuthResponse, requireAdmin } from "@/lib/auth/admin";
 
 export const dynamic = "force-dynamic";
 
 const updateSchema = z.object({ id: z.number().int().positive(), status: z.enum(["scheduled", "live", "ended", "cancelled"]) });
 
 export async function GET() {
+  try { await requireAdmin(); } catch (error) { return adminAuthResponse(error); }
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase.from("live_rooms").select("id, host_id, title, status, viewer_count, scheduled_at, started_at, ended_at, created_at").order("created_at", { ascending: false }).limit(100);
@@ -19,6 +21,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
+  try { await requireAdmin(); } catch (error) { return adminAuthResponse(error); }
   const parsed = updateSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
   try {
