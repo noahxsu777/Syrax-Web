@@ -23,6 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AdminTools, type AdminTool } from "./admin-tools";
 import { AdminSection } from "./admin-sections";
 import { RecentRegistrations } from "./recent-registrations";
+import { AdminLogin } from "./admin-login";
 
 const nav = [
   { label: "Resumen", icon: LayoutDashboard },
@@ -52,6 +53,9 @@ export default function Home() {
   const [loadError, setLoadError] = useState("");
   const [adminTool, setAdminTool] = useState<AdminTool>(null);
   const [userQuery, setUserQuery] = useState("");
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => { fetch("/api/auth/session", { cache: "no-store" }).then(response => setAuthenticated(response.ok)).catch(() => setAuthenticated(false)); }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -75,6 +79,9 @@ export default function Home() {
   }, [dashboard]);
 
   const chartLine = chartPoints.map((point, index) => `${index ? "L" : "M"}${point.x} ${point.y}`).join(" ");
+
+  if (authenticated === null) return <main className="login-screen"><div className="login-loading">Verificando sesión…</div></main>;
+  if (!authenticated) return <AdminLogin onSuccess={() => setAuthenticated(true)}/>;
 
   return (
     <div className="app-shell">
@@ -101,7 +108,7 @@ export default function Home() {
           <div className="header-actions">
             <button className="icon-button" aria-label="Notificaciones"><Bell size={19}/><span className="notification-dot"/></button>
             <span className="divider"/>
-            <button className="profile"><span>ZA</span><div><strong>Zyrax Admin</strong><small>Superadmin</small></div><ChevronDown size={16}/></button>
+            <button className="profile" onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); setAuthenticated(false); }} title="Cerrar sesión"><span>ZA</span><div><strong>Zyrax Admin</strong><small>Cerrar sesión</small></div><ChevronDown size={16}/></button>
           </div>
         </header>
 
