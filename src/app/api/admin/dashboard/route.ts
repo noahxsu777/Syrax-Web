@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminAuthResponse, requireAdmin } from "@/lib/auth/admin";
 
 export const dynamic = "force-dynamic";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function GET() {
+  try { await requireAdmin(); } catch (error) { return adminAuthResponse(error); }
   try {
     const supabase = createAdminClient();
     const users: User[] = [];
