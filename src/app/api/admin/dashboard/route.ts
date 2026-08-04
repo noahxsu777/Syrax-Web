@@ -28,9 +28,11 @@ export async function GET() {
       supabase.from("audit_logs").select("id, action, resource_type, resource_id, created_at").order("created_at", { ascending: false }).limit(4),
     ]);
 
-    if (adminError) throw adminError;
-    if (featureError) throw featureError;
-    if (auditResult.error) throw auditResult.error;
+    const warnings = [
+      adminError && "No se pudo leer admin_profiles.",
+      featureError && "No se pudo leer feature_flags.",
+      auditResult.error && "No se pudo leer audit_logs.",
+    ].filter(Boolean);
 
     const now = Date.now();
     const activeUsers = users.filter((user) => {
@@ -56,7 +58,8 @@ export async function GET() {
           enabledFeatures: featureCount ?? 0,
         },
         signups,
-        activities: auditResult.data ?? [],
+        activities: auditResult.error ? [] : (auditResult.data ?? []),
+        warnings,
         generatedAt: new Date().toISOString(),
       },
       { headers: { "Cache-Control": "no-store" } },
