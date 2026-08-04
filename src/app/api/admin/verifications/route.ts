@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminAuthResponse, requireAdmin } from "@/lib/auth/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ const updateSchema = z.object({
 });
 
 export async function GET() {
+  try { await requireAdmin(); } catch (error) { return adminAuthResponse(error); }
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase.from("verification_requests").select("id, user_id, document_type, document_url, status, submitted_at").eq("status", "pending").order("submitted_at", { ascending: true }).limit(50);
@@ -35,6 +37,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
+  try { await requireAdmin(); } catch (error) { return adminAuthResponse(error); }
   const parsed = updateSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
 
