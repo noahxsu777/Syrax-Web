@@ -91,12 +91,27 @@ create table if not exists public.content_items (
 create index if not exists content_items_created_idx
   on public.content_items (created_at desc);
 
+create table if not exists public.user_registration_events (
+  id bigint generated always as identity primary key,
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  ip_address inet,
+  ip_hash text,
+  platform text not null default 'unknown' check (platform in ('ios', 'android', 'web', 'desktop', 'unknown')),
+  app_version text,
+  user_agent text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists user_registration_events_created_idx
+  on public.user_registration_events (created_at desc);
+
 alter table public.admin_profiles enable row level security;
 alter table public.feature_flags enable row level security;
 alter table public.audit_logs enable row level security;
 alter table public.verification_requests enable row level security;
 alter table public.live_rooms enable row level security;
 alter table public.content_items enable row level security;
+alter table public.user_registration_events enable row level security;
 
 -- No crear políticas para clientes móviles sobre estas tablas. El dashboard accede
 -- mediante rutas server-side después de validar sesión, rol y MFA.
