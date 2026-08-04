@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminAuthResponse, requireAdmin } from "@/lib/auth/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ const registrationSchema = z.object({
 });
 
 export async function GET() {
+  try { await requireAdmin(); } catch (error) { return adminAuthResponse(error); }
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase.from("user_registration_events").select("id, user_id, ip_address, platform, app_version, created_at").order("created_at", { ascending: false }).limit(20);
