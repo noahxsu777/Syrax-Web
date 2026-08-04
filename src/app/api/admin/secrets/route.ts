@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { adminAuthResponse, requireAdmin } from "@/lib/auth/admin";
 
 const bodySchema = z.object({
   service: z.enum(["zegocloud", "giphy"]),
@@ -7,6 +8,7 @@ const bodySchema = z.object({
 });
 
 export async function PUT(request: Request) {
+  try { await requireAdmin(); } catch (error) { return adminAuthResponse(error); }
   // TODO: 1) validar sesión + MFA + rol superadmin; 2) cifrar con AES-GCM/KMS;
   // 3) guardar solo el ciphertext; 4) registrar actor/fecha/IP en audit_logs.
   const parsed = bodySchema.safeParse(await request.json());
