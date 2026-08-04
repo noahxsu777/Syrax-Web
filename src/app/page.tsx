@@ -22,6 +22,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { AdminTools, type AdminTool } from "./admin-tools";
 import { AdminSection } from "./admin-sections";
+import { RecentRegistrations } from "./recent-registrations";
 
 const nav = [
   { label: "Resumen", icon: LayoutDashboard },
@@ -117,6 +118,7 @@ export default function Home() {
           </div>
 
           <div className="dashboard-grid">
+            <RecentRegistrations />
             <section className="panel overview-panel">
               <div className="panel-title"><div><h3>Nuevos usuarios</h3><p>Registros de Supabase Auth durante los últimos 7 días</p></div><button className="select-button">Últimos 7 días <ChevronDown size={15}/></button></div>
               <div className="chart-wrap">
