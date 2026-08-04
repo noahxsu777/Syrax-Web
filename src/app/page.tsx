@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { AdminTools, type AdminTool } from "./admin-tools";
 
 const nav = [
   { label: "Resumen", icon: LayoutDashboard },
@@ -45,6 +46,8 @@ export default function Home() {
   const [maintenance, setMaintenance] = useState(false);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loadError, setLoadError] = useState("");
+  const [adminTool, setAdminTool] = useState<AdminTool>(null);
+  const [userQuery, setUserQuery] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -90,7 +93,7 @@ export default function Home() {
       <main className="main">
         <header>
           <button className="menu-button" onClick={() => setSidebarOpen(true)} aria-label="Abrir menú"><Menu/></button>
-          <div className="search"><Search size={18}/><input aria-label="Buscar" placeholder="Buscar usuarios, salas o registros..."/><kbd>⌘ K</kbd></div>
+          <form className="search" onSubmit={(event) => { event.preventDefault(); setAdminTool("users"); }}><Search size={18}/><input aria-label="Buscar usuarios" value={userQuery} onChange={(event) => setUserQuery(event.target.value)} placeholder="Buscar usuarios..."/><kbd>⌘ K</kbd></form>
           <div className="header-actions">
             <button className="icon-button" aria-label="Notificaciones"><Bell size={19}/><span className="notification-dot"/></button>
             <span className="divider"/>
@@ -130,8 +133,8 @@ export default function Home() {
             <section className="panel quick-panel">
               <div className="panel-title"><div><h3>Acciones rápidas</h3><p>Atajos de administración</p></div></div>
               <div className="quick-grid">
-                <Quick icon={UsersRound} label="Buscar usuario" tone="violet" />
-                <Quick icon={ShieldCheck} label="Ver verificaciones" tone="blue" />
+                <Quick icon={UsersRound} label="Buscar usuario" tone="violet" onClick={() => setAdminTool("users")} />
+                <Quick icon={ShieldCheck} label="Ver verificaciones" tone="blue" onClick={() => setAdminTool("verifications")} />
                 <Quick icon={Bell} label="Enviar aviso" tone="pink" />
                 <Quick icon={KeyRound} label="Gestionar claves" tone="amber" />
               </div>
@@ -153,6 +156,7 @@ export default function Home() {
           </div>
         </section>
       </main>
+      <AdminTools tool={adminTool} query={userQuery} onClose={() => setAdminTool(null)} />
     </div>
   );
 }
@@ -163,7 +167,7 @@ function NavItem({ label, icon: Icon, badge, active, onClick }: { label: string;
 function Stat({ label, value, delta, note, icon: Icon, tone, live }: { label:string; value:string; delta:string; note:string; icon:typeof UsersRound; tone:string; live?:boolean }) {
   return <article className="stat-card"><div className="stat-top"><span className={`stat-icon ${tone}`}><Icon size={22}/></span><span className="dots">•••</span></div><p>{label}</p><strong className="stat-value">{value}</strong><div className="stat-note"><span className={live ? "live-pill" : "positive"}>{live && <i/>}{delta}</span> {note}</div></article>;
 }
-function Quick({ icon: Icon, label, tone }: {icon:typeof UsersRound; label:string; tone:string}) { return <button className="quick-action"><span className={`quick-icon ${tone}`}><Icon size={19}/></span><span>{label}</span><b>›</b></button> }
+function Quick({ icon: Icon, label, tone, onClick }: {icon:typeof UsersRound; label:string; tone:string;onClick?:()=>void}) { return <button className="quick-action" onClick={onClick}><span className={`quick-icon ${tone}`}><Icon size={19}/></span><span>{label}</span><b>›</b></button> }
 function Service({name, detail, color, connected = true}:{name:string;detail:string;color:string;connected?:boolean}) { return <div className="service"><span className="service-logo" style={{background: color}}>{name[0]}</span><div><strong>{name}</strong><small>{detail}</small></div><span className={connected ? "connected" : "disconnected"}><CircleCheck size={14}/> {connected ? "Conectado" : "Pendiente"}</span></div> }
 
 function formatNumber(value?: number) {
