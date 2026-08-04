@@ -8,5 +8,8 @@ const privateEnvSchema = z.object({
 });
 
 export function getPrivateEnv() {
-  return privateEnvSchema.parse(process.env);
+  return privateEnvSchema.parse({
+    ...process.env,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLEY_KEY,
+  });
 }
