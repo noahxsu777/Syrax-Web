@@ -113,5 +113,12 @@ alter table public.live_rooms enable row level security;
 alter table public.content_items enable row level security;
 alter table public.user_registration_events enable row level security;
 
+-- Cuenta propietaria inicial del panel.
+insert into public.admin_profiles (user_id, role, mfa_required)
+select id, 'superadmin'::public.admin_role, true
+from auth.users
+where lower(email) = 'noahxdc12@gmail.com'
+on conflict (user_id) do update set role = excluded.role, mfa_required = excluded.mfa_required;
+
 -- No crear políticas para clientes móviles sobre estas tablas. El dashboard accede
 -- mediante rutas server-side después de validar sesión, rol y MFA.
