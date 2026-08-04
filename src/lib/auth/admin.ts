@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
 
 export async function requireAdmin() {
   const sessionClient = await createServerSupabaseClient();
@@ -13,3 +14,5 @@ export async function requireAdmin() {
 }
 
 export class AdminAuthError extends Error { constructor(message: string, public status: number) { super(message); } }
+
+export function adminAuthResponse(error: unknown) { const status = error instanceof AdminAuthError ? error.status : 500; return NextResponse.json({ error: error instanceof Error ? error.message : "No autorizado." }, { status }); }
