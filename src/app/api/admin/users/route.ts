@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { AdminAuthError, requireAdmin } from "@/lib/auth/admin";
+import { AdminAuthError, adminAuthResponse, requireAdmin } from "@/lib/auth/admin";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -83,4 +83,4 @@ function publicUser(user: User) {
   };
 }
 
-function authResponse(error: unknown) { const status = error instanceof AdminAuthError ? error.status : 500; return NextResponse.json({ error: error instanceof Error ? error.message : "No autorizado." }, { status }); }
+function authResponse(error: unknown) { return adminAuthResponse(error); }
