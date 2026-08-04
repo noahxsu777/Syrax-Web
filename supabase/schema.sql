@@ -1,5 +1,8 @@
 -- Ejecutar en Supabase SQL Editor. Ajusta los campos a las tablas existentes de Vibra.
-create type public.admin_role as enum ('support', 'moderator', 'admin', 'superadmin');
+do $$ begin
+  create type public.admin_role as enum ('support', 'moderator', 'admin', 'superadmin');
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists public.admin_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -28,9 +31,30 @@ create table if not exists public.audit_logs (
   created_at timestamptz not null default now()
 );
 
+do $$ begin
+  create type public.verification_status as enum ('pending', 'approved', 'rejected');
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.verification_requests (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  document_type text not null,
+  document_url text,
+  status public.verification_status not null default 'pending',
+  review_note text,
+  submitted_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  reviewed_by uuid references auth.users(id)
+);
+
+create index if not exists verification_requests_status_submitted_idx
+  on public.verification_requests (status, submitted_at);
+
 alter table public.admin_profiles enable row level security;
 alter table public.feature_flags enable row level security;
 alter table public.audit_logs enable row level security;
+alter table public.verification_requests enable row level security;
 
 -- No crear políticas para clientes móviles sobre estas tablas. El dashboard accede
 -- mediante rutas server-side después de validar sesión, rol y MFA.
